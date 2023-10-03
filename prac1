@@ -1,0 +1,87 @@
+setwd("C:\\Users\\22091\\Desktop\\sp")
+a <- scan("4300-0.txt",what="character",skip=73,nlines=32858-73)
+a <- gsub("_(","",a,fixed=TRUE) ## remove "_("
+a
+
+
+split_punct <- function(vec){
+  ii <- grep("[,$, .$, ;$, !$, :$, ?$]", vec)
+  iis <- ii+1:length(ii)
+  vecs <- rep("", length(vec)+length(ii))
+  vecs[iis] <- substr(vec[ii],nchar(vec)[ii],nchar(vec)[ii])
+  vecs[-iis] <- gsub("[,$, .$, ;$, !$, :$, ?$]", "", vec)
+  
+  return(vecs)
+}
+an <- split_punct(a)
+an
+
+
+a_uni <- unique(tolower(an))
+freq <- tabulate(match(tolower(an),a_uni))
+df <- data.frame(a_uni,freq)
+freq_sort <- order(-df$freq)
+a_sort <- df[freq_sort,]
+b <- a_sort[1:1000,]
+b
+
+
+#7####
+b_i <- match(tolower(an),b$a_uni)
+b_i
+
+#triplets
+triplets <- cbind(b_i[1:(length(b_i)-2)],b_i[2:(length(b_i)-1)],b_i[3:length(b_i)])  
+triplets
+
+rowSums(triplets)
+is.na(rowSums(triplets))
+triplets_new <- triplets[is.na(rowSums(triplets)) == FALSE,]
+triplets_new
+
+#pairs
+pairs <- cbind(b_i[1:(length(b_i)-1)],b_i[2:(length(b_i))])  
+pairs
+
+rowSums(pairs)
+is.na(rowSums(pairs))
+pairs_new <- pairs[is.na(rowSums(pairs)) == FALSE,]
+pairs_new
+
+
+#8####
+#common words frequency
+total_fre=sum(b$freq)
+word_prob=b$freq/total_fre
+#Simulate to generate a new text
+simulate_1=function(Q,P,B1000){
+  my_text=c()
+  #set.seed(1)
+  my_text[1:2]=sample(1:1000,2,replace=FALSE)
+  for (i in 3:52){
+    sub_matrix1=Q[Q[,1]==my_text[i-2]&Q[,2]==my_text[i-1],,drop=FALSE]
+    sub_matrix2=P[P[,1]==my_text[i-1],,drop=FALSE]
+    if (length(sub_matrix1)>0){
+      #set.seed(1)
+      my_text[i]=sample(sub_matrix1[,3],1)
+    } else if(length(sub_matrix2)>0) {
+      #set.seed(1)
+      my_text[i]=sample(sub_matrix2[,2],1)
+    }else {
+      #set.seed(1)
+      my_text[i]=sample(B1000,1,prob=word_prob) 
+    }
+  }
+  return(my_text)
+}
+
+
+simulate_1(triplets_new,pairs_new,b$a_uni)
+b$a_uni[simulate_1(triplets_new,pairs_new,b$a_uni)][3:52]
+cat(b$a_uni[simulate_1(triplets_new,pairs_new,b$a_uni)][3:52])
+
+
+#9####
+
+s2 <- sample(b$a_uni,50,prob = word_prob,replace = FALSE)
+s2
