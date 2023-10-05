@@ -1,3 +1,13 @@
+##information of team
+
+##Contribution
+
+##Overview
+#Our aim is to generate a sequence of words by simulation using the established "small language model" based on the given text.
+
+##Outline
+
+#In order to make your reading experience more comfortable and smooth during the following code, we provide introductions for most of the functions involved below:
 # tolower() is used to convert character strings to lowercase.
 # unique() is employed to obtain unique elements from a given vector/array/data structure. It returns a new vector or data structure containing only the unique elements from the original input, removing any duplicates.
 # tabulate() is used to create a tabulation or frequency table of the elements in a vector.
@@ -8,7 +18,7 @@
 # substr() is used to extract or replace substrings from character vectors or strings
 # rep() is used to replicate or repeat values in a vector a specified number of times
 
-
+-----------------------------------------------------
 #Set the current working directory
 setwd("C:\\Users\\22091\\Desktop\\sp")
 
