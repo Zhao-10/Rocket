@@ -47,6 +47,7 @@ split_punct = function(billy){
   return(vec)
 }
 
+an = split_punct(a)
 
 
 
@@ -115,7 +116,7 @@ model_sim = function(b_p){
 }
 
 #### Testing
-b_p = ruinif(1007); b_p = b_p/sum(b_p)
+b_p = runif(1007); b_p = b_p/sum(b_p)
 cat(model_sim(b_p)," ")
 
 
@@ -123,3 +124,6 @@ cat(model_sim(b_p)," ")
 sample(b, size = 50, replace = TRUE ,prob = b_p)
 
 ### 10 
+
+
+
