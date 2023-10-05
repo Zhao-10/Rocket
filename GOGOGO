@@ -136,7 +136,8 @@ ind = which(tabulate(ml[!is.na(ml)]) / b$freq > 0.5)  # indices where the freque
 b_ind = b$a_uni[ind]
 
 # Get the indices of unique capital_words that are present in b_ind after converting them to lowercase
-ind2 = which((tolower(unique(capital_words))) %in% b_ind)
+# "which()" determine the indices of elements that satisfy a certain condition
+ind2 = which((tolower(unique(capital_words))) %in% b_ind) # %in% is used to check whether elements of the vector is present in another vector and it returns a logical vector
 # Get the unique capital_words that are present in b_ind after converting them to lowercase
 uuu = unique(capital_words)[ind2]
 # Match the lowercase version of uuu with itself to get the matching indices
