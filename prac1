@@ -85,3 +85,41 @@ cat(b$a_uni[simulate_1(triplets_new,pairs_new,b$a_uni)][3:52])
 
 s2 <- sample(b$a_uni,50,prob = word_prob,replace = FALSE)
 s2
+
+
+#10####
+capital_words=grep("\\b[A-Z]\\w*",an,value=TRUE)
+
+ml = match(tolower(capital_words),b$a_uni)
+
+ml[!is.na(ml)]
+
+tabulate(ml[!is.na(ml)])/b$freq >0.5
+ind = which(tabulate(ml[!is.na(ml)])/b$freq >0.5)
+
+b_ind = b$a_uni[ind]
+capital_words
+
+unique(capital_words)
+
+ind2=which((tolower(unique(capital_words))) %in% b_ind)
+uuu = unique(capital_words)[ind2]
+unique(unique(capital_words)[ind2])
+
+
+mmm = match(tolower(uuu), unique(tolower(uuu)))
+
+ind3=which(tabulate(mmm)!=1) #有重复的单词在135个单词里的索引
+repeat_words=unique(tolower(unique(capital_words)[ind2]))[ind3] #135个单词里面有重复的69个单词
+ind_repeat=which((tolower(unique(capital_words))) %in% repeat_words)
+repeat_words_change=unique(capital_words)[ind_repeat][grep("^[[:punct:][:upper:]]+$",unique(capital_words)[ind_repeat])]#69个重复单词的大写形式
+
+ind4=which(tabulate(mmm)==1)
+unrepeat_words=unique(tolower(unique(capital_words)[ind2]))[ind4]
+ind_unrepeat=which((tolower(unique(capital_words))) %in% unrepeat_words)
+unrepeat_words_change=unique(capital_words)[ind_unrepeat]
+words_change=c(repeat_words_change,unrepeat_words_change)
+ind5=which(b$a_uni %in% tolower(words_change))
+b2=b
+b2$a_uni[ind5]=words_change
+b2
