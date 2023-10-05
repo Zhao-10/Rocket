@@ -1,0 +1,170 @@
+# tolower() is used to convert character strings to lowercase.
+# unique() is employed to obtain unique elements from a given vector/array/data structure. It returns a new vector or data structure containing only the unique elements from the original input, removing any duplicates.
+# tabulate() is used to create a tabulation or frequency table of the elements in a vector.
+# match() is used to find the positions of elements in a vector or set of values
+# sample() is used to generate random samples or permutations of a sequence or vector.
+# grep() is used to search for a specified pattern within a character vector or a set of character strings
+# gsub() is used to replace all occurrences of a specified pattern with a replacement string in a character vector or a set of character strings
+# substr() is used to extract or replace substrings from character vectors or strings
+# rep() is used to replicate or repeat values in a vector a specified number of times
+
+
+#Set the current working directory
+setwd("C:\\Users\\22091\\Desktop\\sp")
+
+#Read the context of the file “4300-0.txt” into variable a
+#Read as character data, starting from line 74, reading 32858-73 lines
+a <- scan("4300-0.txt",what="character",skip=73,nlines=32858-73)
+
+#Replace all "_(" with “”(an empty string) in variable a
+a <- gsub("_(","",a,fixed=TRUE) ## remove "_("
+a
+
+ # Define a function called 'split_punct' that takes a single argument 'vec'
+ split_punct <- function(vec){
+  
+  # Find the indices of elements in 'vec' that match any of the specified punctuation characters(“,”,”.”,”;”,”!”,”:”,”?”)
+  ii <- grep("[,$, .$, ;$, !$, :$, ?$]", vec)
+  # Create a vector of sequential indices starting from 'ii'
+  iis <- ii + 1:length(ii)
+  
+  # Create a new vector 'vecs' with a length equal to the sum of the lengths of 'vec' and 'ii'
+  vecs <- rep("", length(vec) + length(ii))
+  
+  # Insert the substrings consisting of the last character of 'vec[ii]' into 'vecs' at positions 'iis'
+  vecs[iis] <- substr(vec[ii], nchar(vec)[ii], nchar(vec)[ii])
+  
+  # Remove the specified punctuation characters from 'vec' and store the result in 'vecs' at positions other than 'iis'
+  vecs[-iis] <- gsub("[,$, .$, ;$, !$, :$, ?$]", "", vec)
+  return(vecs)
+}
+a_clean <- split_punct(a) #Apply the function to obtain text with split punctuation characters
+a_clean
+
+# Create a new variable 'a_uni' that contains unique, lowercase versions of 'a_clean'.
+a_uni <- unique(tolower(a_clean))
+# find the positions elements of ‘a_clean’ in ‘a_uni’ and calculate the frequency
+freq <- tabulate(match(tolower(a_clean), a_uni))
+df <- data.frame(a_uni, freq)
+freq_sort <- order(-df$freq)  # Sort 'df$freq’ in descending order
+a_sort <- df[freq_sort, ]
+# Extract the top 1000 rows from 'a_sort' and store them in 'b'.
+b <- a_sort[1:1000,]
+b
+
+#7####
+# Obtain the indices (b_i) of {a_clean} in lowercase among the 1000 most common words{b$a_uni}
+b_i <- match(tolower(a_clean),b$a_uni)
+b_i
+
+#triplets
+#Create a matrix, named "triplets," by combining three column vectors
+#The first column consists of elements from the first element to the third-to-last element of b_i
+#The second column consists of elements from the second element to the second-to-last element of b_i
+#The third column consists of elements from the third element to the last element of b_i
+triplets <- cbind(b_i[1:(length(b_i)-2)],b_i[2:(length(b_i)-1)],b_i[3:length(b_i)])  
+triplets
+
+# Remove all rows containing NA values, and name it as triplets_new.
+rowSums(triplets)
+is.na(rowSums(triplets))
+triplets_new <- triplets[is.na(rowSums(triplets)) == FALSE,]
+triplets_new
+
+#pairs
+#Create a matrix, named "triplets," by combining two column vectors
+#The first column consists of elements from the first element to the second-to-last element of b_i
+#The second column consists of elements from the second element to the last element of b_i
+pairs <- cbind(b_i[1:(length(b_i)-1)],b_i[2:(length(b_i))])  
+pairs
+
+#Remove all rows containing NA values, and name it as pairs_new.
+rowSums(pairs)
+is.na(rowSums(pairs))
+pairs_new <- pairs[is.na(rowSums(pairs)) == FALSE,]
+pairs_new
+
+#8####
+#common words frequency
+total_fre=sum(b$freq)
+word_prob=b$freq/total_fre
+#Simulate to generate a new text
+simulate_1 <- function(Q,P,B1000){
+  my_text=c()
+  #set.seed(1)
+  my_text[1:2]=sample(1:1000,2,replace=FALSE)
+  for (i in 3:52){
+    sub_matrix1=Q[Q[,1]==my_text[i-2]&Q[,2]==my_text[i-1],,drop=FALSE]
+    sub_matrix2=P[P[,1]==my_text[i-1],,drop=FALSE]
+    if (length(sub_matrix1)>0){
+      #set.seed(1)
+      my_text[i]=sample(sub_matrix1[,3],1)
+    } else if(length(sub_matrix2)>0) {
+      #set.seed(1)
+      my_text[i]=sample(sub_matrix2[,2],1)
+    }else {
+      #set.seed(1)
+      my_text[i]=sample(B1000,1,prob=word_prob) 
+    }
+  }
+  return(my_text)
+}
+
+simulate_1(triplets_new,pairs_new,b$a_uni)
+b$a_uni[simulate_1(triplets_new,pairs_new,b$a_uni)][3:52]
+cat(b$a_uni[simulate_1(triplets_new,pairs_new,b$a_uni)][3:52])
+
+
+#9#
+# Generate a random sample of 50 elements from the 'b$a_uni’,
+# Elements are sampled based on probabilities defined in the 'word_prob' vector and sampling is done without replacement
+s2 <- sample(b$a_uni,50,prob = word_prob,replace = FALSE)
+s2
+
+#10#
+# Find words starting with a capital letter using regular expression and return a character vector(“value=T”)
+# “\\b[A-Z]\\w*” matches a word that starts with an uppercase letter followed by zero or more word characters.
+capital_words = grep("\\b[A-Z]\\w*", a_clean, value = TRUE)
+#Obtain the indices of these words in lowercase among the 1000 most common words
+ml = match(tolower(capital_words), b$a_uni) 
+ml[!is.na(ml)] # Filter out the NA values from 'ml'
+# Calculate the frequency of non-NA values in 'ml' and check if it is greater than 0.5
+# 0.5 is the threshold we use to determine whether a word starting with a uppercase letter at most often times should be considered.
+tabulate(ml[!is.na(ml)]) / b$freq > 0.5
+ind = which(tabulate(ml[!is.na(ml)]) / b$freq > 0.5)  # indices where the frequency condition is met
+# Get the corresponding values from 'a_uni' column using the indices
+b_ind = b$a_uni[ind]
+
+# Get the indices of unique capital_words that are present in b_ind after converting them to lowercase
+ind2 = which((tolower(unique(capital_words))) %in% b_ind)
+# Get the unique capital_words that are present in b_ind after converting them to lowercase
+uuu = unique(capital_words)[ind2]
+# Match the lowercase version of uuu with itself to get the matching indices
+mmm = match(tolower(uuu), unique(tolower(uuu)))
+
+# Get the indices where the frequency count of mmm is not equal to 1
+ind3 = which(tabulate(mmm) != 1)
+repeat_words = unique(tolower(unique(capital_words)[ind2]))[ind3]
+# Get the indices where the unique lowercase version of capital_words is present in repeat_words
+ind_repeat = which((tolower(unique(capital_words))) %in% repeat_words)
+# Get the repeat_words that contain punctuation and uppercase letters
+#During the process, we have noticed that a few words have punctuation marks in the middle
+repeat_words_change = unique(capital_words)[ind_repeat][grep("^[[:punct:][:upper:]]+$", unique(capital_words)[ind_repeat])]
+
+# Get the indices where the frequency count of mmm is equal to 1
+ind4 = which(tabulate(mmm) == 1)
+# Get the unique lowercase unrepeat_words based on ind2 and ind4
+unrepeat_words = unique(tolower(unique(capital_words)[ind2]))[ind4]
+# Get the indices where the unique lowercase version of capital_words is present in unrepeat_words
+ind_unrepeat = which((tolower(unique(capital_words))) %in% unrepeat_words)
+unrepeat_words_change = unique(capital_words)[ind_unrepeat]
+# Combine repeat_words_change and unrepeat_words_change into a single vector
+words_change = c(repeat_words_change, unrepeat_words_change)
+
+# Get the indices where the 'a_uni' column in 'b' matches with the lowercase version of words_change
+ind5 = which(b$a_uni %in% tolower(words_change))
+# Create a copy of 'b' dataframe
+b_cap = b
+# Replace the corresponding values in 'a_uni' column with words_change
+b_cap$a_uni[ind5] = words_change
+b_cap
