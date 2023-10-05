@@ -86,23 +86,26 @@ pairs_new
 
 #8####
 #common words frequency
-total_fre=sum(b$freq)
-word_prob=b$freq/total_fre
-#Simulate to generate a new text
-simulate_1 <- function(Q,P,B1000){
-  my_text=c()
+total_fre=sum(b$freq)  # Total sum of occurrence of words in b
+word_prob=b$freq/total_fre # Frequencies of each word in b
+#Simulation: generate a sequence of indices in b; create a function to generate a sequence of words through simulation
+simulate_1=function(Q,P,B1000){ 
+  # The function is established to help generate a sequence of words
+  # Q,P: matrix "triplets" and "pairs", displayed in Question 7 
+  # B1000: the vector b
+  my_text=c() # Create an empty vector
   #set.seed(1)
-  my_text[1:2]=sample(1:1000,2,replace=FALSE)
+  my_text[1:2]=sample(1:1000,2,replace=FALSE) # Generate two numbers from (1:1000) randomly; represent indices of words in b
   for (i in 3:52){
-    sub_matrix1=Q[Q[,1]==my_text[i-2]&Q[,2]==my_text[i-1],,drop=FALSE]
-    sub_matrix2=P[P[,1]==my_text[i-1],,drop=FALSE]
-    if (length(sub_matrix1)>0){
+    sub_matrix1=Q[Q[,1]==my_text[i-2]&Q[,2]==my_text[i-1],,drop=FALSE] # Subset of column 3 of matrix Q given the entries in column 1 & 2
+    sub_matrix2=P[P[,1]==my_text[i-1],,drop=FALSE] # Subset of column 2 of matrix P given the entries in column 1
+    if (length(sub_matrix1)>0){ # If sub_matrix1 is not empty, sample the next word within sub_matrix1
       #set.seed(1)
       my_text[i]=sample(sub_matrix1[,3],1)
-    } else if(length(sub_matrix2)>0) {
+    } else if(length(sub_matrix2)>0) { # If sub_matrix1 is empty but sub_matrix2 is non-empty, sample the next word within sub_matrix2
       #set.seed(1)
       my_text[i]=sample(sub_matrix2[,2],1)
-    }else {
+    }else { # If neither sub_matrix1 nor sub_matrix2 is nonempty, sample the next word according to word_prob
       #set.seed(1)
       my_text[i]=sample(B1000,1,prob=word_prob) 
     }
@@ -110,9 +113,11 @@ simulate_1 <- function(Q,P,B1000){
   return(my_text)
 }
 
-simulate_1(triplets_new,pairs_new,b$a_uni)
-b$a_uni[simulate_1(triplets_new,pairs_new,b$a_uni)][3:52]
-cat(b$a_uni[simulate_1(triplets_new,pairs_new,b$a_uni)][3:52])
+simulate_1(triplets_new,pairs_new,b$a_uni) # Apply function "simulate_1" with arguments Q=triplets_new, P=pairs_new, B1000=b$a_uni;
+# Output: a sequence of indices
+
+b$a_uni[simulate_1(triplets_new,pairs_new,b$a_uni)][3:52] # Find the words according to the indices generated previously
+cat(b$a_uni[simulate_1(triplets_new,pairs_new,b$a_uni)][3:52]) # Outputs the objects, concatenating the words to form 50-word sections
 
 
 #9#
