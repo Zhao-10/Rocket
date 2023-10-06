@@ -1,190 +1,342 @@
-## Group 24
-# 1.Jiaxuan Zhou__s2481783
-# 2.Jingyu Zhao__s2493697
-# 3.Yanfu(Billy) Ding__s2558622
+# Group member information
 
-##Contribution
+## Group Number: 24
+## 1.Jiaxuan Zhou__s2481783
+## 2.Jingyu Zhao__s2493697
+## 3.Yanfu(Billy) Ding__s2558622
+
+# Contribution
+
+## Text-processing (Q3~Q5): Jingyu Zhao [formulated 'split_funct']
+##                        + Yanfu(Billy) Ding [modified 'split_funct']
+## Simulation (Q6~Q9): Jiaxuan Zhou [created a function for simulating] 
+##                   + Yanfu(Billy) Ding [modified the corresponding function]
+## Capitalisation (Q10): Jointly completed by all members.
+
+## Proportion of work
+## Jiaxuan Zhou : Jingyu Zhao : Yanfu(Billy) Ding = 35% : 35% : 30%
+
+# Overview
+## Our aim is to generate a sequence of words by simulation using the established 
+## "small language model" based on the given text.
+
+# Outline 
+
+## 1 Text Pre-processing (Q1-Q5)
+## 2 Most commonly occurring words (Q6)
+## 3 Language model construction (Q7)
+## 4 Simulation (Q8-Q9) 
+## 5 Capitalisation (Q10) 
 
 
-##Overview
-#Our aim is to generate a sequence of words by simulation using the established "small language model" based on the given text.
 
+# Notes:
+## In order to create a more comfortable and smoother experience to readers, 
+## we provide introductions for most of the functions involved below:
 
-#In order to make your reading experience more comfortable and smooth during the following code, we provide introductions for most of the functions involved below:
-# tolower() is used to convert character strings to lowercase.
-# grep(pattern,x,value) is used to search for a specified pattern within a character vector and returns the indices of the elements that match the pattern.(Setting value=T will return the actual matching elements instead of their indices.)
-# rep(x,times) is used to replicate or repeat values in a vector a specified number of times.
-# substr(x, start, stop) is used to extract or replace substrings from character vectors or strings.(start/stop specifies the position of the first/last character of the substring.)
-# gsub(pattern, replacement, x) is used to replace all occurrences of a specified pattern with a replacement string in a character vector or a set of character strings.
-# unique() is employed to obtain unique elements from a given vector/array/data structure(x). It returns a new vector or data structure containing only the unique elements from the original input, removing any duplicates.
-# tabulate(bin, nbins = max(1, bin, na.rm = TRUE)) is used to create a tabulation or frequency table of the elements in a vector. (bin:a numeric vector or a factor ; nbins the number of bins to be used)
-# match(x, table) is used to find the positions of elements in a vector or set of values. It returns a vector of the positions of (first) matches of its first argument in its second.
-# sample(x, size, replace = FALSE, prob = NULL) is used to generate random samples or permutations of a sequence or vector. (size: the number of items to choose.)
-# which() determine the indices of elements that satisfy a certain condition.
+### tolower(): convert character strings to lowercase
 
--------------------------------------------------------------------------------------------------------------------------
-#Set the current working directory
+### unique(): obtain unique elements from a given vector/array/data structure; 
+###           return a new vector or data structure containing only the unique 
+###           elements from the original input, removing any duplicates
+
+### tabulate(): create a tabulation or frequency table of the elements in a vector
+
+### match(): find the positions of elements in a vector or set of values
+
+### sample(): generate random samples or permutations of a sequence or vector
+
+### grep(): search for a specified pattern within a character vector or 
+###         a set of character strings
+
+### gsub(): replace all occurrences of a specified pattern with a replacement 
+###         string in a character vector or a set of character strings
+
+### substr(): extract or replace substrings from character vectors or strings
+
+### rep(): replicate or repeat values in a vector a specified number of times
+---------------------------------------------------------------------------------------------------
+  
+  
+  
+
+# 1 Text Pre-processing (Q1-Q5)
+
+# (Question 3)
+
+## Set the current working directory.
 setwd("C:\\Users\\22091\\Desktop\\sp")
 
-#Read the context of the file “4300-0.txt” into variable a
-#Read as character data, starting from line 74, reading 32858-73 lines
+## Read the context of the file “4300-0.txt” into an object 'a';
+## read as character data, starting from line 74, reading 32858-73 lines.
 a <- scan("4300-0.txt",what="character",skip=73,nlines=32858-73)
 
-#Replace all "_(" with “”(an empty string) in variable a
-a <- gsub("_(","",a,fixed=TRUE) ## remove "_("
+## Replace all '_(' with ''(an empty string) in variable 'a'.
+a <- gsub("_(","",a,fixed=TRUE)
 a
 
- # Define a function called 'split_punct' that takes a single argument 'vec'
- split_punct <- function(vec){
+# (Question 4)
+
+## Define the function 'split_punct' for separating the required punctuation 
+## marks from words they are attached to in the text.
+split_punct <- function(vec){
+  ## Input: a vector of strings;
+  ## Output: an updated vector encompassing words and punctuation marks;
+  ## Brief outline: 
+  ## #1 Find the location of elements in the input vector that ends with a mark of interest;
+  ## #2 Specify the length of the output vector;
+  ## #3 Assign every mark following a word to an appropriate position;
+  ## #4 Assign the remaining entries to proper positions.
   
-  # Find the indices of elements in 'vec' that match any of the specified punctuation characters(“,”,”.”,”;”,”!”,”:”,”?”)
-  ii <- grep("[,$, .$, ;$, !$, :$, ?$]", vec)
-  # Create a vector of sequential indices starting from 'ii'
+
+  ## Create a vector 'ii' representing the indices of elements in 'vec' that 
+  ## match any of the specified punctuation marks (“,”,”.”,”;”,”!”,”:”,”?”).
+  ii <- grep("[\\,\\.\\;\\!\\:\\?]$", vec)
+  ## Create a vector 'iis' of sequential indices starting from 'ii'.
   iis <- ii + 1:length(ii)
   
-  # Create a new vector 'vecs' with a length equal to the sum of the lengths of 'vec' and 'ii'
+  ## Create a new vector 'vecs' with length equal to the sum of the lengths of 'vec' and 'ii'.
   vecs <- rep("", length(vec) + length(ii))
   
-  # Insert the substrings consisting of the last character of 'vec[ii]' into 'vecs' at positions 'iis'
+  ## Insert the sub-strings consisting of the last character of 'vec[ii]' into 'vecs' at position 'iis'.
   vecs[iis] <- substr(vec[ii], nchar(vec)[ii], nchar(vec)[ii])
   
-  # Remove the specified punctuation characters from 'vec' and store the result in 'vecs' at positions other than 'iis'
-  vecs[-iis] <- gsub("[,$, .$, ;$, !$, :$, ?$]", "", vec)
+  ## Remove the specified punctuation characters from 'vec' and 
+  ## store the result in 'vecs' at the remaining locations.
+  vecs[-iis] <- gsub("[\\,\\.\\;\\!\\:\\?]$", "", vec)
+  
   return(vecs)
 }
-a_clean <- split_punct(a) #Apply the function to obtain text with split punctuation characters
+
+# (Question 5)
+
+## Apply the above function to obtain text with splitted punctuation characters;
+## the corresponding result is named 'a_clean'.
+a_clean <- split_punct(a) 
+## Output 'a_clean'.
 a_clean
 
-# Create a new variable 'a_uni' that contains unique, lowercase versions of 'a_clean'.
+
+# 2 Most commonly occurring words (Q6)
+
+# (Question 6)
+
+## 6(a) Create a new vector 'a_uni' that contains the unique lower-case versions of 'a_clean'.
 a_uni <- unique(tolower(a_clean))
-# find the positions elements of ‘a_clean’ in ‘a_uni’ and calculate the frequency
+
+## 6(b) Employ the 'match' function to determine the index for each element 
+##      in the lower-case text, indicating its corresponding position.
+##      within the unique word vector. 
+match(tolower(a_clean), a_uni)
+
+## 6(c) Count up how many time each unique word occurs in the text.
+### Use the function 'tabulate' with input given in Question 6(b).
 freq <- tabulate(match(tolower(a_clean), a_uni))
+### Create a DataFrame consist of two columns 'a_uni' and 'freq'.  
 df <- data.frame(a_uni, freq)
-freq_sort <- order(-df$freq)  # Sort 'df$freq’ in descending order
+### Sort 'df$freq' in descending order, and store it in 'freq_sort'.
+freq_sort <- order(-df$freq)  
+### Derive a sub-DataFrame 'a_sort' from 'df' according to 'freq_sort'.
 a_sort <- df[freq_sort, ]
-# Extract the top 1000 rows from 'a_sort' and store them in 'b'.
+
+
+## 6(d) Establish the minimum number of times a word needs to appear in order to
+##      qualify for inclusion in the set of approximately 1000 most frequently used words.
+threshold = a_sort$freq[1007]
+### Note that a_sort$freq[964:965] = c(28,27), and a_sort$freq[1007:1008] = c(27,26),
+### and so 27 and 28 are possible thresholds. However, 1007 is closer to 1000 than 964,
+### and thus 27 is selected as our threshold.
+
+## 6(e)
+### Extract the top 1000 rows from 'a_sort' and store them in 'b'.
 b <- a_sort[1:1000,]
 b
 
-#7####
-# Obtain the indices (b_i) of {a_clean} in lowercase among the 1000 most common words{b$a_uni}
+
+# 3 Language model construction (Q7)
+
+# (Question 7)
+
+## 7(a) Obtain the vector of indices 'b_i' of lower-case version of 'a_clean' among 
+##      the vector containing 1000 most common words 'b'.
 b_i <- match(tolower(a_clean),b$a_uni)
 b_i
 
-#triplets
-#Create a matrix, named "triplets," by combining three column vectors
-#The first column consists of elements from the first element to the third-to-last element of b_i
-#The second column consists of elements from the second element to the second-to-last element of b_i
-#The third column consists of elements from the third element to the last element of b_i
+## 7(b)  Create three column common word triples matrix.
+### Create a matrix, named 'triplets', by combining three column vectors, where
+### the first column consists of elements from the first element to the third-to-last element of 'b_i',
+### the second column consists of elements from the second element to the second-to-last element of 'b_i',
+### and the third column consists of elements from the third element to the last element of 'b_i'.
 triplets <- cbind(b_i[1:(length(b_i)-2)],b_i[2:(length(b_i)-1)],b_i[3:length(b_i)])  
 triplets
 
-# Remove all rows containing NA values, and name it as triplets_new.
+## 7(c) Remove all rows containing NA in 'triplets', and name it as 'triplets_new'.
+### Compute the row sums of 'triplets'.
 rowSums(triplets)
+### Justify the existence of missing elements for every row respectively.
 is.na(rowSums(triplets))
+### Eliminate rows within 'triplets' that possess missing values, 
+### subsequently assigning this filtered dataset the name 'triplets_new'.
 triplets_new <- triplets[is.na(rowSums(triplets)) == FALSE,]
 triplets_new
 
-#pairs
-#Create a matrix, named "triplets," by combining two column vectors
-#The first column consists of elements from the first element to the second-to-last element of b_i
-#The second column consists of elements from the second element to the last element of b_i
-pairs <- cbind(b_i[1:(length(b_i)-1)],b_i[2:(length(b_i))])  
+## 7(d) Create two column common word pairs matrix, including eliminating rows 
+##      containing missing values.
+### Create a matrix, named 'pairs', by combining two column vectors.
+### The first column consists of elements from the first element to the second-to-last element of 'b_i'.
+### The second column consists of elements from the second element to the last element of 'b_i'.
+pairs <- cbind(b_i[1:(length(b_i)-1)],b_i[2:(length(b_i))])
 pairs
-
-#Remove all rows containing NA values, and name it as pairs_new.
+### Compute the row sums of 'pairs'.
 rowSums(pairs)
+### Justify the existence of missing elements for every row respectively.
 is.na(rowSums(pairs))
+### Eliminate rows within 'pairs' that possess missing values, 
+### subsequently assigning this filtered dataset the name 'pairs_new'.
 pairs_new <- pairs[is.na(rowSums(pairs)) == FALSE,]
 pairs_new
 
-#8####
-#common words frequency
-total_fre=sum(b$freq)  # Total sum of occurrence of words in b
-word_prob=b$freq/total_fre # Frequencies of each word in b
-#Simulation: generate a sequence of indices in b; create a function to generate a sequence of words through simulation
+
+
+# 4 Simulation (Q8-Q9) 
+
+
+# (Question 8)
+
+## Target: derive the frequency of common words.
+## Total sum of occurrence of words in b.
+total_fre=sum(b$freq)  
+## Frequencies of each word in b.
+word_prob=b$freq/total_fre 
+
+## Simulation: generate a sequence of indices in b by building a function.
 simulate_1=function(Q,P,B1000){ 
-  # The function is established to help generate a sequence of words
-  # Q,P: matrix "triplets" and "pairs", displayed in Question 7 
-  # B1000: the vector b
-  my_text=c() # Create an empty vector
+  ## The function is established to help generate a sequence of words;
+  ## Input: 'Q', 'P', and 'B1000' where
+  ## 'Q','P': matrix "triplets" and "pairs" respectively, displayed in Question 7, and
+  ## B1000: the vector 'b'
+  ## Output: the vector of simulated words
+  ## Brief Outline: 
+  ## #1 Randomly generated two words from 'b';
+  ## #2 Simulate the next word according to 'Q' and 'P' given the first two words;
+  ## #3 Firstly, use 'Q' to simulate if the derived sub-matrix of 'Q' is not empty.   
+  ## #4 If the condition in #3 fails, then use 'P' to simulate 
+  ##    if the derived sub-matrix of 'P' is not empty. 
+  ## #5 Otherwise, sample the next word according to 'word_prob'.
+  
+  ## Create an empty vector 'my_text'.
+  my_text=c() 
   #set.seed(1)
-  my_text[1:2]=sample(1:1000,2,replace=FALSE) # Generate two numbers from (1:1000) randomly; represent indices of words in b
+  ## Generate two numbers from (1:1000) randomly, without replacement; 
+  ## the numbers represent indices of words in 'b';
+  ## assign the first and second entry of 'my_text' to be 
+  ## the first and the second number generated, respectively.
+  my_text[1:2]=sample(1:1000,2,replace=FALSE) 
   for (i in 3:52){
-    sub_matrix1=Q[Q[,1]==my_text[i-2]&Q[,2]==my_text[i-1],,drop=FALSE] # Subset of column 3 of matrix Q given the entries in column 1 & 2
-    sub_matrix2=P[P[,1]==my_text[i-1],,drop=FALSE] # Subset of column 2 of matrix P given the entries in column 1
-    if (length(sub_matrix1)>0){ # If sub_matrix1 is not empty, sample the next word within sub_matrix1
-      #set.seed(1)
+    # Subset of column 3 of matrix 'Q' given the entries in column 1 & 2.
+    sub_matrix1=Q[Q[,1]==my_text[i-2]&Q[,2]==my_text[i-1],,drop=FALSE] 
+    # Subset of column 2 of matrix 'P' given the entries in column 1.
+    sub_matrix2=P[P[,1]==my_text[i-1],,drop=FALSE] 
+    if (length(sub_matrix1)>0){ 
+      ## If 'sub_matrix1' is not empty, sample the next word within 'sub_matrix1'.
       my_text[i]=sample(sub_matrix1[,3],1)
-    } else if(length(sub_matrix2)>0) { # If sub_matrix1 is empty but sub_matrix2 is non-empty, sample the next word within sub_matrix2
-      #set.seed(1)
+    } else if(length(sub_matrix2)>0) { 
+      ## If 'sub_matrix1' is empty but 'sub_matrix2' is non-empty, 
+      ## sample the next word within 'sub_matrix2'.
       my_text[i]=sample(sub_matrix2[,2],1)
-    }else { # If neither sub_matrix1 nor sub_matrix2 is nonempty, sample the next word according to word_prob
-      #set.seed(1)
+    }else { 
+      ## If neither 'sub_matrix1' nor 'sub_matrix2' is non-empty, 
+      ## sample the next word according to 'word_prob'.
       my_text[i]=sample(B1000,1,prob=word_prob) 
     }
   }
   return(my_text)
 }
 
-simulate_1(triplets_new,pairs_new,b$a_uni) # Apply function "simulate_1" with arguments Q=triplets_new, P=pairs_new, B1000=b$a_uni;
-# Output: a sequence of indices
+## Apply function "simulate_1" with arguments 'Q=triplets_new, P=pairs_new, B1000=b$a_uni';
+## Output: a sequence of indices.
+simulate_1(triplets_new,pairs_new,b$a_uni) 
+## Find the words according to the indices generated previously.
+b$a_uni[simulate_1(triplets_new,pairs_new,b$a_uni)][3:52] 
+## Outputs the objects, concatenating the words to form 50-word sections.
+cat(b$a_uni[simulate_1(triplets_new,pairs_new,b$a_uni)][3:52]) 
 
-b$a_uni[simulate_1(triplets_new,pairs_new,b$a_uni)][3:52] # Find the words according to the indices generated previously
-cat(b$a_uni[simulate_1(triplets_new,pairs_new,b$a_uni)][3:52]) # Outputs the objects, concatenating the words to form 50-word sections
 
+# (Question 9)
 
-#9#
-# Generate a random sample of 50 elements from the 'b$a_uni’,
-# Elements are sampled based on probabilities defined in the 'word_prob' vector and sampling is done without replacement
+## Generate a random sample of 50 elements from the 'b$a_uni'.
+## Elements are sampled based on probabilities defined in the 'word_prob' vector and 
+## sampling is done without replacement.
 s2 <- sample(b$a_uni,50,prob = word_prob,replace = FALSE)
 s2
 
-#10#
-# Find words starting with a capital letter using regular expression and return a character vector(“value=T”)
-# “\\b[A-Z]\\w*” matches a word that starts with an uppercase letter followed by zero or more word characters.
+
+
+# 5 Capitalisation (Q10) 
+
+
+# (Question 10)
+
+## Find words starting with a capital letter using regular expression 
+## and return a character vector("value=T").
+## "\\b[A-Z]\\w*" matches a word that starts with an upper-case letter 
+## followed by zero or more word characters.
 capital_words = grep("\\b[A-Z]\\w*", a_clean, value = TRUE)
-#Obtain the indices of these words in lowercase among the 1000 most common words
+## Obtain the indices of these words in lowercase among the 1000 most common words.
 ml = match(tolower(capital_words), b$a_uni) 
-ml[!is.na(ml)] # Filter out the NA values from 'ml'
-# Calculate the frequency of non-NA values in 'ml' and check if it is greater than 0.5
-# 0.5 is the threshold we use to determine whether a word starting with a uppercase letter at most often times should be considered.
+## Filter out the NA values from 'ml'
+ml[!is.na(ml)] 
+
+## Calculate the frequency of non-NA values in 'ml' and check if it is greater than 0.5;
+## we use a threshold of 0.5 to determine whether a word, 
+## which is predominantly capitalized at the beginning, should be considered.
 tabulate(ml[!is.na(ml)]) / b$freq > 0.5
-ind = which(tabulate(ml[!is.na(ml)]) / b$freq > 0.5)  # indices where the frequency condition is met
-# Get the corresponding values from 'a_uni' column using the indices
+## Indices where the frequency condition is met.
+ind = which(tabulate(ml[!is.na(ml)]) / b$freq > 0.5) 
+## Get the corresponding values from 'a_uni' column using the indices.
 b_ind = b$a_uni[ind]
 
-# Find which words from the top 1000 words have appeared in their capitalized form in the original text.
-ind2 = which((tolower(unique(capital_words))) %in% b_ind) # %in% is used to check whether elements of the vector is present in another vector and it returns a logical vector
-# obtain the uppercase form of the target word 
+## Find which of the words from the top 1000 words have appeared in 
+## their capitalised form in the original text.
+## Note: '%in%' checks whether vector elements are in another vector, returning a logical vector.
+ind2 = which((tolower(unique(capital_words))) %in% b_ind) 
+## Obtain the upper-case form of the targeted word. 
 target_words = unique(capital_words)[ind2]
-# This is to find some recurring words (words that appear in both capitalized form and with multiple uppercase letters) in the text.
+
+## Find some "recurring words"(words that appear in both capitalized form 
+## and with multiple upper-case letters) in the text.
 target_words_index = match(tolower(target_words), unique(tolower(target_words)))
-
-# This index vector can help us find the positions of words with duplicate forms.
+## Create an index vector 'ind3' that help locate the positions of words with identical forms.
 ind3 = which(tabulate(target_words_index) != 1)
+## Vector of recurring words in lower case.
 repeat_words = unique(tolower(unique(capital_words)[ind2]))[ind3]
-# Get the indices where the unique lowercase version of capital_words is present in repeat_words
+## Get the indices where the unique lower-case version of capital_words is present in 'repeat_words'.
 ind_repeat = which((tolower(unique(capital_words))) %in% repeat_words)
-# Get the repeat_words that contain punctuation and uppercase letters 
-# During the process, we have noticed that a few words have punctuation marks in the middle
-# For these "repeat_words", we choose to match their form where all letters are uppercase.
-repeat_words_change = unique(capital_words)[ind_repeat][grep("^[[:punct:][:upper:]]+$", unique(capital_words)[ind_repeat])]
+## Get the 'repeat_words' that contain punctuation and upper-case letters 
+## During the process, we have noticed that a few words have punctuation marks in the middle
+## For these 'repeat_words', we choose to match their form where all letters are upper-case.
+repeat_words_change = unique(capital_words)[ind_repeat][grep("^[[:punct:][:upper:]]+$",
+                      unique(capital_words)[ind_repeat])]
 
-# obtain words that have only one uppercase form by checking the indices
+## Obtain words that have only one upper-case form by checking the indices.
 ind4 = which(tabulate(target_words_index) == 1)
+## Vector of lower-case words satisfying the very previous condition.
 unrepeat_words = unique(tolower(unique(capital_words)[ind2]))[ind4]
-# obtain the indices of these words and retrieve their corresponding uppercase forms
+## Obtain the indices of these words and retrieve their corresponding upper-case forms.
 ind_unrepeat = which((tolower(unique(capital_words))) %in% unrepeat_words)
 unrepeat_words_change = unique(capital_words)[ind_unrepeat]
-# Combine repeat_words_change and unrepeat_words_change into a single vector 
-# These are the words in b that we want to replace (these words appear in the original text with more than half of them in uppercase form).
+
+## Combine repeat_words_change and unrepeat_words_change into a single vector.
+## These are the words in b that we want to replace 
+## (these words appear in the original text with more than half of them in uppercase form).
 words_change = c(repeat_words_change, unrepeat_words_change)
 
-# Get the indices where the 'a_uni' column in 'b' matches with the lowercase version of words_change
+## Get the indices where the 'a_uni' column in 'b' matches with the 
+## lower-case version of 'words_change'.
 ind5 = which(b$a_uni %in% tolower(words_change))
-# Create a copy of 'b' dataframe to not affect the frequency of common words in b
+## Create a copy of 'b' dataframe to not affect the frequency of common words in b.
 b_cap = b
-# Replace the corresponding values in 'a_uni' column with words_change
+## Replace the corresponding values in 'a_uni' column with words_change.
 b_cap$a_uni[ind5] = words_change
+## Finally, a modified version of vector 'b' is generated! 
 b_cap
