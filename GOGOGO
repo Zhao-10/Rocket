@@ -1,24 +1,28 @@
-##information of team
+## Group 24
+# 1.Jiaxuan Zhou__s2481783
+# 2.Jingyu Zhao__s2493697
+# 3.Yanfu(Billy) Ding__s2558622
 
 ##Contribution
+
 
 ##Overview
 #Our aim is to generate a sequence of words by simulation using the established "small language model" based on the given text.
 
-##Outline
 
 #In order to make your reading experience more comfortable and smooth during the following code, we provide introductions for most of the functions involved below:
 # tolower() is used to convert character strings to lowercase.
-# unique() is employed to obtain unique elements from a given vector/array/data structure. It returns a new vector or data structure containing only the unique elements from the original input, removing any duplicates.
-# tabulate() is used to create a tabulation or frequency table of the elements in a vector.
-# match() is used to find the positions of elements in a vector or set of values
-# sample() is used to generate random samples or permutations of a sequence or vector.
-# grep() is used to search for a specified pattern within a character vector or a set of character strings
-# gsub() is used to replace all occurrences of a specified pattern with a replacement string in a character vector or a set of character strings
-# substr() is used to extract or replace substrings from character vectors or strings
-# rep() is used to replicate or repeat values in a vector a specified number of times
+# grep(pattern,x,value) is used to search for a specified pattern within a character vector and returns the indices of the elements that match the pattern.(Setting value=T will return the actual matching elements instead of their indices.)
+# rep(x,times) is used to replicate or repeat values in a vector a specified number of times.
+# substr(x, start, stop) is used to extract or replace substrings from character vectors or strings.(start/stop specifies the position of the first/last character of the substring.)
+# gsub(pattern, replacement, x) is used to replace all occurrences of a specified pattern with a replacement string in a character vector or a set of character strings.
+# unique() is employed to obtain unique elements from a given vector/array/data structure(x). It returns a new vector or data structure containing only the unique elements from the original input, removing any duplicates.
+# tabulate(bin, nbins = max(1, bin, na.rm = TRUE)) is used to create a tabulation or frequency table of the elements in a vector. (bin:a numeric vector or a factor ; nbins the number of bins to be used)
+# match(x, table) is used to find the positions of elements in a vector or set of values. It returns a vector of the positions of (first) matches of its first argument in its second.
+# sample(x, size, replace = FALSE, prob = NULL) is used to generate random samples or permutations of a sequence or vector. (size: the number of items to choose.)
+# which() determine the indices of elements that satisfy a certain condition.
 
------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------
 #Set the current working directory
 setwd("C:\\Users\\22091\\Desktop\\sp")
 
@@ -150,36 +154,36 @@ ind = which(tabulate(ml[!is.na(ml)]) / b$freq > 0.5)  # indices where the freque
 # Get the corresponding values from 'a_uni' column using the indices
 b_ind = b$a_uni[ind]
 
-# Get the indices of unique capital_words that are present in b_ind after converting them to lowercase
-# "which()" determine the indices of elements that satisfy a certain condition
+# Find which words from the top 1000 words have appeared in their capitalized form in the original text.
 ind2 = which((tolower(unique(capital_words))) %in% b_ind) # %in% is used to check whether elements of the vector is present in another vector and it returns a logical vector
-# Get the unique capital_words that are present in b_ind after converting them to lowercase
-uuu = unique(capital_words)[ind2]
-# Match the lowercase version of uuu with itself to get the matching indices
-mmm = match(tolower(uuu), unique(tolower(uuu)))
+# obtain the uppercase form of the target word 
+target_words = unique(capital_words)[ind2]
+# This is to find some recurring words (words that appear in both capitalized form and with multiple uppercase letters) in the text.
+target_words_index = match(tolower(target_words), unique(tolower(target_words)))
 
-# Get the indices where the frequency count of mmm is not equal to 1
-ind3 = which(tabulate(mmm) != 1)
+# This index vector can help us find the positions of words with duplicate forms.
+ind3 = which(tabulate(target_words_index) != 1)
 repeat_words = unique(tolower(unique(capital_words)[ind2]))[ind3]
 # Get the indices where the unique lowercase version of capital_words is present in repeat_words
 ind_repeat = which((tolower(unique(capital_words))) %in% repeat_words)
-# Get the repeat_words that contain punctuation and uppercase letters
-#During the process, we have noticed that a few words have punctuation marks in the middle
+# Get the repeat_words that contain punctuation and uppercase letters 
+# During the process, we have noticed that a few words have punctuation marks in the middle
+# For these "repeat_words", we choose to match their form where all letters are uppercase.
 repeat_words_change = unique(capital_words)[ind_repeat][grep("^[[:punct:][:upper:]]+$", unique(capital_words)[ind_repeat])]
 
-# Get the indices where the frequency count of mmm is equal to 1
-ind4 = which(tabulate(mmm) == 1)
-# Get the unique lowercase unrepeat_words based on ind2 and ind4
+# obtain words that have only one uppercase form by checking the indices
+ind4 = which(tabulate(target_words_index) == 1)
 unrepeat_words = unique(tolower(unique(capital_words)[ind2]))[ind4]
-# Get the indices where the unique lowercase version of capital_words is present in unrepeat_words
+# obtain the indices of these words and retrieve their corresponding uppercase forms
 ind_unrepeat = which((tolower(unique(capital_words))) %in% unrepeat_words)
 unrepeat_words_change = unique(capital_words)[ind_unrepeat]
-# Combine repeat_words_change and unrepeat_words_change into a single vector
+# Combine repeat_words_change and unrepeat_words_change into a single vector 
+# These are the words in b that we want to replace (these words appear in the original text with more than half of them in uppercase form).
 words_change = c(repeat_words_change, unrepeat_words_change)
 
 # Get the indices where the 'a_uni' column in 'b' matches with the lowercase version of words_change
 ind5 = which(b$a_uni %in% tolower(words_change))
-# Create a copy of 'b' dataframe
+# Create a copy of 'b' dataframe to not affect the frequency of common words in b
 b_cap = b
 # Replace the corresponding values in 'a_uni' column with words_change
 b_cap$a_uni[ind5] = words_change
