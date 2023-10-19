@@ -1,0 +1,173 @@
+#模拟5400s到达的车
+time = (120-30)*60
+a.rate = 0.1
+set.seed(1);
+arr = sample(c(1,0), size = time, prob = c(a.rate,1-a.rate) , replace = TRUE)
+#有车到达的572个时间
+AT = which(arr==1);
+#···················································
+#主函数
+qsim = function(mf,mb,a.rate,trb,trf,tmb,tmf,maxb){
+  nf=nb=eq=numeric(7200)
+  qf = rep(0, mf) #初始(0,0,0,0,0)
+  qb = rep(0, mb) #(0,0,0,0,0)
+  end_time_f=end_time_b=c()
+  line_num_f=line_num_b=c()
+  qf_total=qb_total=c()
+  
+  # min((sort(end_time_b))[(ind3-100):(ind3-1)])
+  # min_fun = function(x){
+  #   return(min(x))
+  # }
+  
+  #······································
+  for(i in 1:7200){
+    #英国队减1
+    if(i %in% end_time_b){
+      ind2=which(end_time_b %in% i)
+      qb[line_num_b[ind2]]=qb[line_num_b[ind2]]-1
+    }
+    #法国队减1
+    if((i %in% end_time_f) && (max(qb)<=maxb) && (sum(qb)<mb*maxb)){
+      ind1=which(end_time_f %in% i)  #ind1表示这个离开时间对应的是第几辆车，为了确定这辆车排队在第几列
+      if(length(ind1) < mb*maxb-sum(qb)){
+        qf[line_num_f[ind1]]=qf[line_num_f[ind1]]-1
+      }else{
+        qf[line_num_f[ind1[1:(mb*maxb-sum(qb))]]]=qf[line_num_f[ind1[1:(mb*maxb-sum(qb))]]]-1
+      }
+    }
+    #法国队来车
+    if(i %in% AT){
+      handling_time_f=round(runif(1,tmf,tmf+trf))
+      line_num1=which.min(qf)
+      if(qf[line_num1]==0){
+        end_time_f=c(end_time_f,i+handling_time_f)
+      }else{
+        end_time_f=c(end_time_f,end_time_f[max(which(line_num_f %in% line_num1))]+handling_time_f)
+      }
+      qf[line_num1]=qf[line_num1]+1
+      line_num_f=c(line_num_f,line_num1)
+      #记录下有车来的这一秒i，以及这辆车的处理时间T[j],以及这辆车进入了第几队qf[]
+    }
+    
+    #·····················································
+    #英国队来车(英国队满了)
+    if((i %in% end_time_f) && (max(qb)<=maxb) && (sum(qb)==mb*maxb)){
+      #---------------------------------
+      n=length(which(end_time_f %in% i))
+
+      if(n!=1){
+        ind4=which(end_time_f %in% i)
+        handling_time_b=round(runif(n,tmb,tmb+trb))
+      #   ##line_num2=(order(qb))[1:n]
+        for(j in 1:n){
+          sb=((sort(end_time_b))[(ind4[j]-100):(ind4[j]-1)])[j]
+          arr_time_b=sb
+      #     line_num2=line_num_b[which(end_time_b %in% arr_time_b )]
+          end_time_f[ind4[j]] = arr_time_b
+      #     end_time_b=c(end_time_b,end_time_b[max(which(line_num_b %in% line_num2))]+handling_time_b[j])
+      #     line_num_b=c(line_num_b,line_num2)
+         }
+      }else{
+      #-----------------------------------------
+      ind3 = which(end_time_f %in% i)
+      arr_time_b = min((sort(end_time_b))[(ind3-100):(ind3-1)])
+      end_time_f[ind3] = arr_time_b
+      handling_time_b=round(runif(1,tmb,tmb+trb))
+      line_num2=line_num_b[which(end_time_b %in% arr_time_b )]
+      # end_time_b=c(end_time_b,end_time_b[max(which(line_num_b %in% line_num2))]+handling_time_b)
+      # line_num_b=c(line_num_b,line_num2)
+       }
+    }else if((i %in% end_time_f) && (max(qb)<=maxb) && (sum(qb)<mb*maxb)){
+      #-----------------
+      n = length(which(end_time_f %in% i))
+      extra = mb*maxb-sum(qb)
+      if(n <= extra){
+        arr_time_b=rep(i,n)
+        handling_time_b=round(runif(n,tmb,tmb+trb))
+        line_num2=(order(qb))[1:n]
+        for(j in 1:n){
+          if(qb[line_num2[j]]==0){
+            end_time_b=c(end_time_b,arr_time_b[j]+handling_time_b[j])
+          }else{
+            end_time_b=c(end_time_b,end_time_b[max(which(line_num_b %in% line_num2[j]))]+handling_time_b[j])
+          }
+          qb[line_num2[j]]=qb[line_num2[j]]+1
+          line_num_b=c(line_num_b,line_num2[j])
+        }
+      }else if(n > extra){
+        arr_time_b1 = rep(i,extra)
+        arr_time_b2 = rep(min(end_time_b[which(end_time_b>i)]),n-extra)
+        ind5  = which(end_time_f %in% i)
+        end_time_f[ind5[1:extra]] = arr_time_b1
+        end_time_f[ind5[(extra+1):n]] = arr_time_b2
+        handling_time_b=round(runif(extra, tmb,tmb+trb))
+        line_num2=(order(qb))[1:extra]
+        for(j in 1:extra){
+          if(qb[line_num2[j]]==0){
+            end_time_b=c(end_time_b,arr_time_b1[j]+handling_time_b[j])
+          }else{
+            end_time_b=c(end_time_b,end_time_b[max(which(line_num_b %in% line_num2[j]))]+handling_time_b[j])
+          }
+          qb[line_num2[j]]=qb[line_num2[j]]+1
+          # line_num_b=c(line_num_b,line_num2[j])
+        }
+        # qb[line_num2[j]]=qb[line_num2[j]]+1
+        line_num_b=c(line_num_b,line_num2)
+      }
+      # else{
+      #   #-----------------
+      #   arr_time_b = i
+      #   handling_time_b=round(runif(1,tmb,tmb+trb))
+      #   line_num2=which.min(qb)
+      #   if(qb[line_num2]==0){
+      #     end_time_b=c(end_time_b,arr_time_b+handling_time_b)
+      #   }else{
+      #     end_time_b=c(end_time_b,end_time_b[max(which(line_num_b %in% line_num2))]+handling_time_b)
+      #   }
+      #   qb[line_num2]=qb[line_num2]+1
+      #   line_num_b=c(line_num_b,line_num2)
+      # }
+    }
+    qf_total=rbind(qf_total,qf)
+    qb_total=rbind(qb_total,qb)
+  }
+  nf=rowMeans(qf_total)
+  nb=rowMeans(qb_total)
+  eq=nf*(tmf+(tmf+trf))/2+nb*(tmb+(tmb+trb))/2
+  result = list(nf,nb,eq)
+  # result = list(qf_total[7200,], length(end_time_b))
+  return(result)
+}
+simul_1 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=30,tmf=30,maxb=20)
+simul_2 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=40,tmf=30,maxb=20)
+
+dev.new()
+par(mfrow=c(2,2))
+plot(1:7200,simul_1[[1]], type = "l", col = "green")
+lines(1:7200,simul_1[[2]], col = "orange")
+plot(1:7200,simul_1[[3]], type = "l")
+plot(1:7200,simul_2[[1]], type = "l", col = "green", ylim = c(0,20))
+lines(1:7200,simul_2[[2]], col = "orange")
+plot(1:7200,simul_2[[3]], type = "l")
+
+
+freq_1 = freq_2 = 0
+for(i in 1:100){
+  simul_1 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=30,tmf=30,maxb=20)
+  if(simul_1[[1]][7200]!=0 ||simul_1[[2]][7200]!=0) {freq_1=freq_1+1}
+}
+
+for(i in 1:100){
+  simul_2 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=40,tmf=30,maxb=20)
+  if(simul_2[[1]][7200]!=0 ||simul_2[[2]][7200]!=0) {freq_2=freq_2+1}
+}
+prob_missing_1=freq_1/100 ; prob_missing_1
+prob_missing_2=freq_2/100 ; prob_missing_2
+
+
+
+for(i in 1:100){
+  x = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=40,tmf=30,maxb=20)
+  print(x)
+}
