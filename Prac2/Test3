@@ -1,12 +1,24 @@
-#模拟5400s到达的车
+# Check-in closes 30 mins before departure (i.e. Only during the first 1.5 hrs can cars join in the French queue)
 time = (120-30)*60
+# The probability of 0.1 of an arrival each second and we use it to randomly generate arrival time.
 a.rate = 0.1
+# "1" represents there is a new car added in French queue ;
+# "0" represents there is no car added in French queue
 set.seed(1);
 arr = sample(c(1,0), size = time, prob = c(a.rate,1-a.rate) , replace = TRUE)
-#有车到达的572个时间
+#  All arrival time of cars added in French queue
 AT = which(arr==1);
-#···················································
-#主函数
+
+## MAIN FUNCTION!!!
+#我们对2小时内每秒钟进行遍历，确定每秒钟法国队和英国队的排队情况，输出法国队和英国队每秒的平均长度和预期等待时间。
+#1.我们先考虑如果有车离开之后的队列（英国队和法国队）情况变化。但法国队要考虑有多辆车同时结束服务并且不能同时去英国队的情况。
+#2.第i时刻和车辆到达法国队时间重合，法国队列长度+1，并获得每辆车离开法国的时间（分类讨论车辆在进入最短列时是否为该列首位）
+#3.第i时刻和车辆离开法国队时间重合，要考虑英国队是否有空位让车进来。
+#（1）英国队已经满了，那么要更新法国队的结束时间，此时车辆离开法国队的时间应该为它检查结束的时间+在英国队有空位出现之前的等待时间（我们在此转化为英国队第一次出现空位的时间）
+#    这个时间怎么求？我们通过对那些已经先行抵达英国检查站的车的英国结束时间（end_time_b）进行排序，选取
+#
+#（2）
+
 qsim = function(mf,mb,a.rate,trb,trf,tmb,tmf,maxb){
   nf=nb=eq=numeric(7200)
   qf = rep(0, mf) #初始(0,0,0,0,0)
@@ -56,28 +68,28 @@ qsim = function(mf,mb,a.rate,trb,trf,tmb,tmf,maxb){
       #---------------------------------
       n=length(which(end_time_f %in% i))
 
-      if(n!=1){
-        ind4=which(end_time_f %in% i)
-        handling_time_b=round(runif(n,tmb,tmb+trb))
+      # if(n!=1){
+      #  ind4=which(end_time_f %in% i)
+      #  handling_time_b=round(runif(n,tmb,tmb+trb))
       #   ##line_num2=(order(qb))[1:n]
-        for(j in 1:n){
-          sb=((sort(end_time_b))[(ind4[j]-100):(ind4[j]-1)])[j]
-          arr_time_b=sb
+      #  for(j in 1:n){
+      #    sb=(sort(end_time_b))[length(end_time_b)-100+1]
+      #    arr_time_b=sb
       #     line_num2=line_num_b[which(end_time_b %in% arr_time_b )]
-          end_time_f[ind4[j]] = arr_time_b
+      #    end_time_f[ind4[j]] = arr_time_b
       #     end_time_b=c(end_time_b,end_time_b[max(which(line_num_b %in% line_num2))]+handling_time_b[j])
       #     line_num_b=c(line_num_b,line_num2)
-         }
-      }else{
+      #   }
+      #}else{
       #-----------------------------------------
       ind3 = which(end_time_f %in% i)
-      arr_time_b = min((sort(end_time_b))[(ind3-100):(ind3-1)])
+      arr_time_b = (sort(end_time_b))[length(end_time_b)-100+1]
       end_time_f[ind3] = arr_time_b
       handling_time_b=round(runif(1,tmb,tmb+trb))
       line_num2=line_num_b[which(end_time_b %in% arr_time_b )]
       # end_time_b=c(end_time_b,end_time_b[max(which(line_num_b %in% line_num2))]+handling_time_b)
       # line_num_b=c(line_num_b,line_num2)
-       }
+      # }
     }else if((i %in% end_time_f) && (max(qb)<=maxb) && (sum(qb)<mb*maxb)){
       #-----------------
       n = length(which(end_time_f %in% i))
