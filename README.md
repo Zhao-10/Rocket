@@ -1,6 +1,6 @@
 # Rocket
 
-## Extended Statistical Programming Group Work: 
+## Extended Statistical Programming Group 24
 
 
 ***M1&2*** 
