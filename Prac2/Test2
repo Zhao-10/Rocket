@@ -139,12 +139,12 @@ simul_2 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=40,tmf=30,maxb=20)
 freq_1 = freq_2 = 0
 for(i in 1:100){
   simul_1 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=30,tmf=30,maxb=20)
-  if(simul_1[[1]][7200]!=0 ||simul_1[[2][7200]!=0) {freq_1=freq_1+1}
+  if(simul_1[[1]][7200]!=0 ||simul_1[[2]][7200]!=0) {freq_1=freq_1+1}
 }
 
 for(i in 1:100){
   simul = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=30,tmf=30,maxb=20)
-  if(simul_2[[1]][7200]!=0 ||simul_2[[2][7200]!=0) {freq_2=freq_2+1}
+  if(simul_2[[1]][7200]!=0 ||simul_2[[2]][7200]!=0) {freq_2=freq_2+1}
 }
 prob_missing_1=freq_1/100
 prob_missing_2=freq_2/100
