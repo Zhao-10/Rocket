@@ -128,12 +128,16 @@ qsim = function(mf,mb,a.rate,trb,trf,tmb,tmf,maxb){
     qf_total=rbind(qf_total,qf)
     qb_total=rbind(qb_total,qb)
   }
-  result = list(qf_total[7200,] , qb_total[7200,])
+  nf=rowMeans(qf_total)
+  nb=rowMeans(qb_total)
+  eq=nf*(tmf+(tmf+trf))/2+nb*(tmb+(tmb+trb))/2
+  result = list(nf,nb,eq)
   return(result)
 }
-x = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=40,tmf=30,maxb=20);x
-a=0
+simul = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=40,tmf=30,maxb=20);
+freq = 0
 for(i in 1:100){
-  x = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=30,tmf=30,maxb=20)
-  if(sum(x[[1]])!=0 || sum(x[[2]])!=0){ a = a+1}
-};a
+  simul = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=30,tmf=30,maxb=20)
+  if(simul[[1]][7200]!=0 ||simul[[2][7200]!=0) {freq=freq+1}
+}
+prob_missing=freq/100
