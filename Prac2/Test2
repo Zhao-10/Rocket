@@ -1,12 +1,17 @@
-#模拟5400s到达的车
+# Check-in closes 30 mins before departure (i.e. Only during the first 1.5 hrs can cars join in the French queue)
 time = (120-30)*60
+# The probability of 0.1 of an arrival each second and we use it to randomly generate arrival time.
 a.rate = 0.1
+# "1" represents there is a new car added in French queue ;
+# "0" represents there is no car added in French queue
 set.seed(1);
 arr = sample(c(1,0), size = time, prob = c(a.rate,1-a.rate) , replace = TRUE)
-#有车到达的572个时间
+#  All arrival time of cars added in French queue
 AT = which(arr==1);
-#···················································
-#主函数
+
+## MAIN FUNCTION!!!
+#我们对2小时内每秒钟进行遍历，确定每秒钟法国队和英国队的排队情况
+
 qsim = function(mf,mb,a.rate,trb,trf,tmb,tmf,maxb){
   nf=nb=eq=numeric(7200)
   qf = rep(0, mf) #初始(0,0,0,0,0)
@@ -30,6 +35,11 @@ qsim = function(mf,mb,a.rate,trb,trf,tmb,tmf,maxb){
     #法国队减1
     if((i %in% end_time_f) && (max(qb)<=maxb) && (sum(qb)<mb*maxb)){
       ind1=which(end_time_f %in% i)  #ind1表示这个离开时间对应的是第几辆车，为了确定这辆车排队在第几列
+      if(length(ind1) < mb*maxb-sum(qb)){
+        qf[line_num_f[ind1]]=qf[line_num_f[ind1]]-1
+      }else{
+        qf[line_num_f[ind1[1:(mb*maxb-sum(qb))]]]=qf[line_num_f[ind1[1:(mb*maxb-sum(qb))]]]-1
+      }
       qf[line_num_f[ind1]]=qf[line_num_f[ind1]]-1
     }
     #法国队来车
@@ -67,7 +77,7 @@ qsim = function(mf,mb,a.rate,trb,trf,tmb,tmf,maxb){
       # }else{
         #-----------------------------------------
         ind3 = which(end_time_f %in% i)
-        arr_time_b = min((sort(end_time_b))[(ind3-100):(ind3-1)])
+        arr_time_b = min((sort(end_time_b))[(ind3-mb*maxb):(ind3-1)])
         end_time_f[ind3] = arr_time_b
         handling_time_b=round(runif(1,tmb,tmb+trb))
         line_num2=line_num_b[which(end_time_b %in% arr_time_b )]
