@@ -1,0 +1,65 @@
+s_tp = 1:600 # Time points
+a.rate = 0.1 # Arrival rates
+mf = 5 # No.queue--France
+mb = 5
+tmf = 30; trf = 40 # U[<tmf>,<tmf>+<trf>] 
+tmb = 30; trb = 40
+maxb = 20
+
+# Sample 0 & 1 with probability <a.rate>; representing the indicator of events {A new car enters the system}
+set.seed(1223); rand = sample(c(1,0), size = length(s_tp), prob = c(a.rate, 1-a.rate) , replace = TRUE) 
+
+# Want to compute *Remaining service time* for cars in the first position of every queue ; create a 0-vector initially
+sing = rep(0,mf) 
+singb = rep(0,mb)
+French_q = rep(0, mf)
+British_q = rep(0, mb)
+
+vacant = maxb * mb
+
+
+
+
+# Create a list containing the specified number of replicated vectors
+vector_list = vector("list", length(s_tp))
+
+
+resample = function(x, ...) x[sample.int(length(x), ...)]
+table = matrix(0, length(s_tp), 5)
+table_b = matrix(0, length(s_tp), 5)
+
+for (i in 1: length(s_tp)){
+  queue = resample(which(French_q == min(French_q)), 1)
+  French_q[queue] = French_q[queue] + 1*rand[i]
+  sing[French_q != 0 & sing == 0] = ceiling(runif(length(queue), tmf, tmf + trf)) * rand[i]
+  
+  
+  
+  ##
+  Bocchi = which(sing == 0 & French_q != 0)
+  suc = resample(Bocchi, min(vacant, length(Bocchi)))
+  French_q[suc] = French_q[suc] - 1
+  sing[sing !=0] = sing[sing !=0] - 1
+  
+  table[i,] = French_q
+  
+  British_q[singb == 0 & British_q != 0] = British_q[singb == 0 & British_q != 0] - 1
+  
+  k = length(suc)
+  while (k > 0){
+    neural = resample(which(British_q == min(British_q)))[1:min(k, length(which(British_q == min(British_q))))]
+    British_q[neural] = British_q[neural] + 1
+    k = k - length(neural)
+  }
+  
+  singb[British_q != 0 & singb == 0] = ceiling(runif(length(singb[British_q != 0 & singb == 0]), tmb, tmb + trb)) 
+  singb[singb !=0] = singb[singb !=0] - 1
+  vacant = maxb * mb - sum(British_q)
+  
+  table_b[i,] = British_q
+  
+  
+}
+
+
+
