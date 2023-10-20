@@ -1,0 +1,208 @@
+##Group Member Information
+
+# Group Number: 24
+# 1. Jiaxuan Zhou__s2481783
+# 2. Jingyu Zhao__s2493697
+# 3. Yanfu(Billy) Ding__s2558622
+
+## Contribution
+
+## Proportion of work
+## Jiaxuan Zhou : Jingyu Zhao : Yanfu(Billy) Ding = 35%: 35%: %
+
+
+
+##Overview
+#Background:
+#The goal of this project is to establish a function to simulate the passage of cars through the French and British passport control
+#at a French ferry terminal. Detailed procedures are as follows.
+#1. First, generate the arrival time sequence of cars entering the French station based on the rate "a.rate".
+#2. Iterate every second within a 2-hour period to determine the status of the French and British queues. 
+#   Output the average length and expected waiting time for the French and British queues per second.
+#   (1) Process the departure of cars from the British station for each second. (Handling departures before arrivals is crucial 
+#       because in cases where cars leave and enter the queue simultaneously, newly arriving cars cannot join the shortest queue.)
+#   (2) Process changes in the departure of cars from the French station for each second. 
+#       Note that we should consider situations where multiple cars at the French station finish their service simultaneously and cannot all move to the British station. 
+#       The number of cars that can go to the British queue affects the queue length in the French queue accordingly.
+#   (3) Process the arrival of cars at the French station for each second. Choose the queue with the shortest length at this moment, 
+#      increase the length of that queue by 1, and determine the departure time for each car.
+#      When calculating departure times, consider whether a car entering the shortest queue is at the front of that queue:
+#        i.If a car enters a queue with a length of 0, its departure time is the arrival time plus processing time.
+#       ii.Otherwise, its departure time is the departure time of the car in front of it in the same queue plus the processing time.
+
+#   (4) Process the arrival of cars at the British station for each second.
+#        i.If all queues at the British station have reached "maxb", cars cannot leave the French station. 
+#          In this case, we need to update their departure times (end_time_f). The departure time from the French queue should be 
+#          the time when their inspection ends plus the waiting time until a vacancy appears in the British queue (transformed into 
+#          the time when the British queue first has an opening after this point). This time can be calculated by sorting the departure
+#          times (end_time_b) of cars that have already arrived at the British station. The 100th entry from the end in this sequence
+#          represents the time when this car will be able to enter the British station because it is the time when the 100 cars in the
+#          British station's queue will be processed (sort(end_time_b)[length(end_time_b)-maxb*mb+1]). 
+#          Since they cannot enter the British station at this point, it does not change the status of the French and British queues.
+#       ii.If at least one queue at the British station has not reached "maxb," consider whether multiple cars are entering the British
+#          station simultaneously and compare the number of cars entering with the remaining space in the British station:
+#           -If the British queues can accommodate the cars to be added at this moment, update the length of the British queues and 
+#            the departure times of the cars normally.
+#           -If the British queues cannot accommodate all the cars entering at this moment, only update the departure times of the cars
+#            that can enter the British queues. The length of the British queues will only increase by the corresponding number of cars, and the excess cars will not affect the British queues at this time.
+#3. Plot (tmb=30/40)
+#   (1) plot "nf"(the average length of the French queues, for each simulation second) 
+#      and "nb"(the average length of the British queues, for each simulation second)
+#   (2) plot "eq"(the average expected waiting time for a car at the start of the french queue for each second of the simulation)
+#4. Perform 100 simulations for each tmb to test the probability that at least one car missing ferry departure
+#    (1) tmb=30, the prob is 0, indicating that no car missing ferry departure in each simulation 
+#        and, as can be seen from the figure, the average length of the British queue never reached a maximum.
+#    (2) tmb=40, the prob is non-zero, suggesting that with tmb increased to 40,there is a possibilty of at least one car missing ferry departure. 
+
+##Code
+# Check-in closes 30 mins before departure (i.e. Only during the first 1.5 hrs can cars join in the French queue)
+time = (120-30)*60
+# The probability of 0.1 of an arrival each second and we use it to randomly generate arrival time.
+a.rate = 0.1
+# "1" represents there is a new car added in French queue ;
+# "0" represents there is no car added in French queue
+# set.seed(1);
+arr = sample(c(1,0), size = time, prob = c(a.rate,1-a.rate) , replace = TRUE)
+#  All arrival time of cars added in French queue
+AT = which(arr==1);
+
+# mf, mb: number of French and British stations respectively
+# tmf, trf, tmb, trb: the processing time of French/British, modelled at uniform (U[tmf/tmb, (tmf+trf)/(tmb+trb)])
+# maxb: maximum British queue length per station    
+qsim = function(mf,mb,a.rate,trb,trf,tmb,tmf,maxb){
+  qf = rep(0, mf) # Set the initial French queue value "qf" (0,0,0,0,0)
+  qb = rep(0, mb) # Set the initial British queue value "qb" (0,0,0,0,0)
+  end_time_f = end_time_b = c() # Leaving time of each car
+  line_num_f = line_num_b = c() # Queue number for each car entering
+  qf_total=qb_total=c()         # Queue situation per second within 2 hrs
+  #Start "for loop"
+  for(i in 1:7200){
+    # Cars leave the British station
+    if(i %in% end_time_b){
+      ind1=which(end_time_b %in% i)
+      qb[line_num_b[ind1]]=qb[line_num_b[ind1]]-1
+    }
+    # Cars leave the French station
+    if((i %in% end_time_f) && (max(qb)<=maxb) && (sum(qb)<mb*maxb)){
+      ind2 = which(end_time_f %in% i)  #ind2表示这个离开时间对应的是第几辆车，为了确定这辆车排队在第几列
+      if(length(ind2) < mb*maxb-sum(qb)){
+        qf[line_num_f[ind2]]=qf[line_num_f[ind2]]-1
+      }else{
+        qf[line_num_f[ind2[1:(mb*maxb-sum(qb))]]]=qf[line_num_f[ind2[1:(mb*maxb-sum(qb))]]]-1
+      }
+    }
+    # Cars arrive at the French station
+    if(i %in% AT){
+      handling_time_f=round(runif(1,tmf,tmf+trf))
+      line_num1=which.min(qf) #进入最短队列
+      if(qf[line_num1]==0){
+        end_time_f=c(end_time_f,i+handling_time_f) #添加新的结束时间(end_time_f)
+      }else{
+        end_time_f=c(end_time_f,end_time_f[max(which(line_num_f %in% line_num1))]+handling_time_f)
+      }
+      qf[line_num1]=qf[line_num1]+1
+      line_num_f=c(line_num_f,line_num1)
+    }
+    # Cars plan to arrive at the British station when the British station has reached its saturation point(maxb*mb)
+    if((i %in% end_time_f) && (max(qb)<=maxb) && (sum(qb)==mb*maxb)){
+      n=length(which(end_time_f %in% i))
+      ind3 = which(end_time_f %in% i)
+      arr_time_b = (sort(end_time_b))[length(end_time_b)-maxb*mb+1]
+      end_time_f[ind3] = arr_time_b
+      handling_time_b=round(runif(1,tmb,tmb+trb))
+      line_num2=line_num_b[which(end_time_b %in% arr_time_b )]
+      # Cars plan to arrive at the British station when the British station has not reached its saturation point
+    }else if((i %in% end_time_f) && (max(qb)<=maxb) && (sum(qb)<mb*maxb)){
+      # Considering multiple cars plan to arrive at the British station at the same time
+      n = length(which(end_time_f %in% i))
+      vacancy = mb*maxb-sum(qb)
+      # Enough spaces available in the Brish queue
+      if(n <= vacancy){
+        arr_time_b=rep(i,n)
+        handling_time_b=round(runif(n,tmb,tmb+trb))
+        line_num2=(order(qb))[1:n]  # The number of queue with minimum queue length
+        for(j in 1:n){
+          if(qb[line_num2[j]]==0){
+            end_time_b=c(end_time_b,arr_time_b[j]+handling_time_b[j])
+          }else{
+            end_time_b=c(end_time_b,end_time_b[max(which(line_num_b %in% line_num2[j]))]+handling_time_b[j])
+          }
+          qb[line_num2[j]]=qb[line_num2[j]]+1
+          line_num_b=c(line_num_b,line_num2[j])
+        }
+        # Not enough spaces available
+      }else if(n > vacancy){
+        arr_time_b1 = rep(i,vacancy)
+        arr_time_b2 = rep(min(end_time_b[which(end_time_b>i)]),n-vacancy)
+        ind4  = which(end_time_f %in% i)
+        end_time_f[ind4[1:vacancy]] = arr_time_b1
+        end_time_f[ind4[(vacancy+1):n]] = arr_time_b2
+        handling_time_b=round(runif(vacancy, tmb,tmb+trb))
+        line_num2=(order(qb))[1:vacancy]
+        for(j in 1:vacancy){
+          if(qb[line_num2[j]]==0){
+            end_time_b=c(end_time_b,arr_time_b1[j]+handling_time_b[j])
+          }else{
+            end_time_b=c(end_time_b,end_time_b[max(which(line_num_b %in% line_num2[j]))]+handling_time_b[j])
+          }
+          qb[line_num2[j]]=qb[line_num2[j]]+1
+        }
+        line_num_b=c(line_num_b,line_num2)
+      }
+    }
+    qf_total=rbind(qf_total,qf)
+    qb_total=rbind(qb_total,qb)
+  }
+  #nf: the average length of the French queues, for each simulation second
+  #nb: the average length of the British queues, for each simulation second
+  #eq: the average expected waiting time for a car at the start of the french queue for each second of the simulation
+  nf=rowMeans(qf_total)
+  nb=rowMeans(qb_total)
+  eq=nf*(tmf+(tmf+trf))/2+nb*(tmb+(tmb+trb))/2
+  result = list(nf,nb,eq)
+  return(result)
+}
+
+# Simulate qsim() function
+simul_1 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=30,tmf=30,maxb=20)
+simul_2 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=40,tmf=30,maxb=20)
+
+#plot
+dev.new()
+par(mfrow=c(2,2))
+plot(1:7200,simul_1[[1]], type = "l", col = "green", main = "tmb=30", xlab = 'time(s)', ylab = 'avg queue length')
+lines(1:7200,simul_1[[2]], col = "orange")
+legend("topleft", lty = c(1,1), col = c("green", "orange"), legend = c("nf","nb"))
+plot(1:7200,simul_1[[3]], type = "l", xlab = "time(s)", ylab = "avg expected waiting time", main = "tmb=30")
+plot(1:7200,simul_2[[1]], type = "l", col = "blue", ylim = c(0,20), main = "tmb=40", xlab = 'time(s)', ylab = 'avg queue length')
+lines(1:7200,simul_2[[2]], col = "red")
+legend("topleft", lty = c(1,1), col = c("blue", "red"), legend = c("nf","nb"))
+plot(1:7200,simul_2[[3]], type = "l", xlab = "time(s)", ylab = "avg expected waiting time", main = "tmb=40")
+
+# Calculate the probability of at least one car missing the ferry departure in 100 simulations (tmb=30/40)
+freq_1 = freq_2 = 0
+for(i in 1:100){
+  simul_1 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=30,tmf=30,maxb=20)
+  if(simul_1[[1]][7200]!=0 ||simul_1[[2]][7200]!=0) {freq_1=freq_1+1}
+}
+for(i in 1:100){
+  simul_2 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=40,tmf=30,maxb=20)
+  if(simul_2[[1]][7200]!=0 ||simul_2[[2]][7200]!=0) {freq_2=freq_2+1}
+}
+prob_missing_1=freq_1/100 ; prob_missing_1
+prob_missing_2=freq_2/100 ; prob_missing_2
+
+
+#Further Findings
+
+#The results show that the average British queue length has reached a maximum value (when the British queue is saturated) in several simulations.
+#In addition, further simulations revealed that the British queue tends to over-saturate during this 2-hour period when there are stranded cars.
+#However, it is worth noting that the triggering of the saturation condition does not necessarily result in a stranded situation.
+freq_3 = freq_4 = freq_5 = 0
+for(i in 1:100){
+  simul_2 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=40,tmf=30,maxb=20)
+  if(simul_2[[1]][7200]!=0 ||simul_2[[2]][7200]!=0) {freq_3=freq_3+1}
+  if((20 %in% simul_2[[2]]) && (simul_2[[1]][7200]!=0 ||simul_2[[2]][7200]!=0)) {freq_4=freq_4+1}
+  if(20 %in% simul_2[[2]]) {freq_5=freq_5+1}
+}
+freq_3; freq_4; freq_5
