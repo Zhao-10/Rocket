@@ -15,7 +15,9 @@ AT = which(arr==1);
 #2.第i时刻和车辆到达法国队时间重合，法国队列长度+1，并获得每辆车离开法国的时间（分类讨论车辆在进入最短列时是否为该列首位）
 #3.第i时刻和车辆离开法国队时间重合，要考虑英国队是否有空位让车进来。
 #（1）英国队已经满了，那么要更新法国队的结束时间，此时车辆离开法国队的时间应该为它检查结束的时间+在英国队有空位出现之前的等待时间（我们在此转化为英国队第一次出现空位的时间）
-#    这个时间怎么求？我们通过对那些已经先行抵达英国检查站的车的英国结束时间（end_time_b）进行排序，选取
+#    这个时间怎么求？我们通过对那些已经先行抵达英国检查站的车的英国结束时间（end_time_b）进行排序，该序列的倒数第100项即为该车将能够进入英国检查站的时间，
+    因为此时是英国检查站队伍中100辆车中最先处理完成的时间（sort(end_time_b)[length(end_time_b)-maxb*mb+1]
+
 #
 #（2）
 
@@ -27,14 +29,14 @@ qsim = function(mf,mb,a.rate,trb,trf,tmb,tmf,maxb){
   end_time_f=end_time_b=c()
   line_num_f=line_num_b=c()
   qf_total=qb_total=c()
-  
+  #循环开始
   for(i in 1:7200){
-    #英国队减1
+    #英国检查站叉车
     if(i %in% end_time_b){
       ind2=which(end_time_b %in% i)
       qb[line_num_b[ind2]]=qb[line_num_b[ind2]]-1
     }
-    #法国队减1
+    #法国检查站叉车
     if((i %in% end_time_f) && (max(qb)<=maxb) && (sum(qb)<mb*maxb)){
       ind1=which(end_time_f %in% i)  #ind1表示这个离开时间对应的是第几辆车，为了确定这辆车排队在第几列
       if(length(ind1) < mb*maxb-sum(qb)){
@@ -43,7 +45,7 @@ qsim = function(mf,mb,a.rate,trb,trf,tmb,tmf,maxb){
         qf[line_num_f[ind1[1:(mb*maxb-sum(qb))]]]=qf[line_num_f[ind1[1:(mb*maxb-sum(qb))]]]-1
       }
     }
-    #法国队来车
+    #加入法国队
     if(i %in% AT){
       handling_time_f=round(runif(1,tmf,tmf+trf))
       line_num1=which.min(qf)
@@ -54,24 +56,21 @@ qsim = function(mf,mb,a.rate,trb,trf,tmb,tmf,maxb){
       }
       qf[line_num1]=qf[line_num1]+1
       line_num_f=c(line_num_f,line_num1)
-      #记录下有车来的这一秒i，以及这辆车的处理时间T[j],以及这辆车进入了第几队qf[]
     }
-    
-    #·····················································
-    #英国队来车(英国队满了)
+    #加入英国队(maxb状态)
     if((i %in% end_time_f) && (max(qb)<=maxb) && (sum(qb)==mb*maxb)){
-     
       n=length(which(end_time_f %in% i))
-      
       ind3 = which(end_time_f %in% i)
-      arr_time_b = (sort(end_time_b))[length(end_time_b)-100+1]
+      arr_time_b = (sort(end_time_b))[length(end_time_b)-maxb*mb+1]
       end_time_f[ind3] = arr_time_b
       handling_time_b=round(runif(1,tmb,tmb+trb))
       line_num2=line_num_b[which(end_time_b %in% arr_time_b )]
-     
+     #加入英国队（非maxb状态）
     }else if((i %in% end_time_f) && (max(qb)<=maxb) && (sum(qb)<mb*maxb)){
+      #考虑有多辆车同时进入英国检查站
       n = length(which(end_time_f %in% i))
       extra = mb*maxb-sum(qb)
+    #英国空位足够容纳此时要进来的车
       if(n <= extra){
         arr_time_b=rep(i,n)
         handling_time_b=round(runif(n,tmb,tmb+trb))
@@ -85,6 +84,7 @@ qsim = function(mf,mb,a.rate,trb,trf,tmb,tmf,maxb){
           qb[line_num2[j]]=qb[line_num2[j]]+1
           line_num_b=c(line_num_b,line_num2[j])
         }
+    #英国空位不够容下要来的车
       }else if(n > extra){
         arr_time_b1 = rep(i,extra)
         arr_time_b2 = rep(min(end_time_b[which(end_time_b>i)]),n-extra)
@@ -104,21 +104,23 @@ qsim = function(mf,mb,a.rate,trb,trf,tmb,tmf,maxb){
         line_num_b=c(line_num_b,line_num2)
       }
     }
+  #每一秒的qf、qb状态
     qf_total=rbind(qf_total,qf)
     qb_total=rbind(qb_total,qb)
   }
-  # nf=rowMeans(qf_total)
-  # nb=rowMeans(qb_total)
-  # eq=nf*(tmf+(tmf+trf))/2+nb*(tmb+(tmb+trb))/2
-  # result = list(nf,nb,eq)
-  result = list(qf_total[7200,], length(end_time_b))
+#得到法国和英国检查站每秒钟的平均队伍长度和平均等待时间
+  nf=rowMeans(qf_total)
+  nb=rowMeans(qb_total)
+  eq=nf*(tmf+(tmf+trf))/2+nb*(tmb+(tmb+trb))/2
+  result = list(nf,nb,eq)
   return(result)
 }
 
-
+#模拟函数
 simul_1 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=30,tmf=30,maxb=20)
 simul_2 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=40,tmf=30,maxb=20)
 
+#plot
 dev.new()
 par(mfrow=c(2,2))
 plot(1:7200,simul_1[[1]], type = "l", col = "green")
@@ -128,22 +130,15 @@ plot(1:7200,simul_2[[1]], type = "l", col = "green", ylim = c(0,20))
 lines(1:7200,simul_2[[2]], col = "orange")
 plot(1:7200,simul_2[[3]], type = "l")
 
-
+#测试100次模拟中有车没能过关的概率（tmb=30/40）
 freq_1 = freq_2 = 0
 for(i in 1:100){
   simul_1 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=30,tmf=30,maxb=20)
   if(simul_1[[1]][7200]!=0 ||simul_1[[2]][7200]!=0) {freq_1=freq_1+1}
 }
-
 for(i in 1:100){
   simul_2 = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=40,tmf=30,maxb=20)
   if(simul_2[[1]][7200]!=0 ||simul_2[[2]][7200]!=0) {freq_2=freq_2+1}
 }
 prob_missing_1=freq_1/100 ; prob_missing_1
 prob_missing_2=freq_2/100 ; prob_missing_2
-
-
-for(i in 1:100){
-  x = qsim(mf=5,mb=5,a.rate=.1,trb=40,trf=40,tmb=40,tmf=30,maxb=20)
-  print(x)
-}
