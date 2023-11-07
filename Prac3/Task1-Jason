@@ -1,0 +1,24 @@
+#Task1
+netup <- function(d) {
+  h <- vector("list", length(d))
+  W <- vector("list", length(d) - 1)
+  b <- vector("list", length(d) - 1)
+
+  # Initialize node values, weights, and biases
+  for (l in seq_along(d)) {
+    if (l < length(d)) {
+      W[[l]] <- matrix(runif(d[l] * d[l + 1], min = 0, max = 0.2), nrow = d[l], ncol = d[l + 1])
+      b[[l]] <- runif(d[l + 1], min = 0, max = 0.2)
+    }
+    h[[l]] <- numeric(d[l])
+  }
+  
+  return(list(h = h, W = W, b = b))
+}
+
+# Example usage
+# d is a vector representing the number of nodes in each layer
+d <- c(3, 4, 2) # for example, a network with input layer of 3 nodes, one hidden layer of 4 nodes, and output layer of 2 nodes
+network <- netup(d)
+
+# The network is now a list containing 'h', 'W', and 'b' elements.
