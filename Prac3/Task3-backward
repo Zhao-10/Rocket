@@ -1,0 +1,33 @@
+#3
+backward = function(nn, k){
+  h_L = nn$h[[length(nn$h)]]
+  prob = exp(h_L) / sum(exp(h_L))
+  
+  dL_dh = probs
+  dL_dh[k] = dL_dh[k] - 1
+  
+  nn$dh = vector("list", length(nn$h))
+  nn$dW = vector("list", length(nn$W))
+  nn$db = vector("list", length(nn$b))
+  
+  #从输出层开始到输入层
+  for(i in length(nn$h):2){
+    # 当前层的dh
+    nn$dh[[i]] = dL_dh
+    # 计算上一层的dW
+    nn$dW[[i-1]] = dL_dh %*% t(nn$h[[i-1]])
+    # 计算上一层的db
+    nn$db[[i-1]] = dL_dh
+    
+    #如果不是第一层，继续计算
+    if(i >1){
+      # working backwards applying the chain rule
+      if(nn$h[[i-1]] > 0){
+        dL_dh = t(nn$W[[i-1]]) %*% dL_dh
+      }else{
+        dL_dh = 0
+      }
+    }
+  }
+  return(nn)
+}
