@@ -1,5 +1,5 @@
 forward = function(nn, inp){
-  d=c(3,4,4,2)
+  d=c(3,4,4,2) 
   nn = netup(d)
   n = length(d)
   h = nn$h
