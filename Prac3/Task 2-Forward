@@ -1,0 +1,22 @@
+forward = function(nn, inp){
+  d=c(3,4,4,2)
+  nn = netup(d)
+  n = length(d)
+  h = nn$h
+  W = nn$W
+  b = nn$b
+  h[[1]] = inp
+  
+  for (i in 2:n){
+    hn = W[[i-1]] %*% h[[i-1]] + nn$b[[i-1]]
+    hn[hn < 0] = 0
+    h[[i]] = hn
+  }
+  
+  return(list(h = h, W = W, b = b))
+}
+
+## Test
+nn = netup(d=c(3,4,4,2))
+inp = c(1,2,3)
+forward(nn, inp)
