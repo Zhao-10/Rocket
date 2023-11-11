@@ -87,7 +87,7 @@ train = function(nn, inp, k, eta = 0.01, mb = 10, nstep = 10000){
   for(i in 1:nstep){
     train_sample = sample(nrow(inp), mb)
     for(j in train_sample){
-      fnn = forward(nn, inp[j,])
+      fnn = forward(nn, as.numeric(inp[j,]))
       bnn = backward(nn, k[j])
       for(k in 1:length(bnn$dW)){
         fnn$W[[k]] = fnn$W[[k]] - eta * bnn$dW[[k]]
@@ -111,4 +111,8 @@ train_species = iris[-test_index, 5]
 k = iris$Species
 
 nn = netup(d = c(4, 8, 7, 3))
-train(nn, train_data, k, eta = 0.01, mb = 10, nstep = 10000)
+train_nn = train(nn, train_data, train_species, eta = 0.01, mb = 10, nstep = 10000)
+
+#6
+
+
