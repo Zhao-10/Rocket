@@ -3,6 +3,7 @@
 # matrix train data
 # modify the variable name
 # deriv() test
+# try another dataset maybe
 
 #1 define the network
 netup = function(d){
