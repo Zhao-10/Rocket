@@ -1,3 +1,9 @@
+#To do:
+# Comment
+# matrix train data
+# modify the variable name
+# deriv() test
+
 #1 define the network
 netup = function(d){
   n = length(d)
