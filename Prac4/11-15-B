@@ -1,0 +1,198 @@
+
+################################################################################
+## Constructing 'netup'
+################################################################################
+
+
+netup = function(d){
+  ## INPUT
+  ## d: a vector giving the number of nodes in each layer of a network
+  
+  
+  n = length(d)
+  h = vector('list', n)
+  W = vector('list', n-1)
+  b = vector('list', n-1)
+  ## Initialize node values,weight matrix and biases
+  for (i in 1:n){
+    h[[i]] = numeric(d[i])
+    if (i<n){
+      
+      W[[i]] = matrix(runif(d[i]*d[i+1], min=0, max=0.2),nrow=d[i+1],ncol=d[i])
+      b[[i]] = runif(d[i+1], min=0, max=0.2)
+    }
+  }
+  return(list(h=h, W=W, b=b, d=d))
+}
+
+
+#2 forward
+nn = netup(d=c(3,4,4,2))
+forward = function(nn, inp){
+  d = nn$d
+  n = length(d)
+  h = nn$h
+  W = nn$W
+  b = nn$b
+  h[[1]] = inp
+  
+  for (i in 2:n){
+    hn = W[[i-1]] %*% h[[i-1]] + nn$b[[i-1]]
+    hn[hn < 0] = 0
+    h[[i]] = hn
+  }
+  
+  return(list(h = h, W = W, b = b, d=d))
+}
+
+
+#3 backward
+backward = function(nn, k){
+  d = nn$d
+  n = d[length(d)]
+  h_L = nn$h[[length(d)]]
+  
+  probs = exp(h_L) / sum(exp(h_L))
+  
+  dL_dh = probs
+  dL_dh[k] = dL_dh[k] - 1
+  
+  dh = vector("list", length(nn$h))
+  dW = vector("list", length(nn$W))
+  db = vector("list", length(nn$b))
+  
+  #从输出层开始到输入层
+  for(i in length(nn$h):2){
+    # 当前层的dh
+    dh[[i]] = dL_dh
+    dl_1 = dL_dh * (nn$h[[i]] > 0)
+    # 计算上一层的dW
+    dW[[i-1]] = dl_1 %*% t(nn$h[[i-1]])
+    # 计算上一层的db
+    db[[i-1]] = dl_1
+    
+    #如果不是第一层，继续计算
+    if(i >1){
+      # working backwards applying the chain rule
+      dL_dh = t(nn$W[[i-1]]) %*% dl_1
+    }
+  }
+  return(list(dh=dh, dW=dW, db=db))
+}
+
+
+#4 Train
+train = function(nn, inp, k, eta = 0.01, mb = 10, nstep = 10000){
+  d = nn$d
+  for(i in 1:nstep){
+    
+    train_sample = sample(nrow(inp), mb)
+    accum_W = vector("list", length(nn$W))
+    accum_b = vector("list", length(nn$b))
+    
+    for(j in 1:length(nn$W)){
+      accum_W[[j]] = matrix(0, nrow = d[j+1], ncol = d[j])
+      accum_b[[j]] = numeric(d[j+1])
+    }
+    
+    for(j in train_sample){
+      fnn = forward(nn, as.numeric(inp[j,]))
+      bnn = backward(fnn, k[j])
+      
+      # Accumulate updates
+      for(l in 1:length(bnn$dW)){
+        accum_W[[l]] = accum_W[[l]] + bnn$dW[[l]]
+        accum_b[[l]] = accum_b[[l]] + bnn$db[[l]]
+      }
+    }
+    
+    # Average updates
+    for(l in 1:length(accum_W)){
+      accum_W[[l]] = accum_W[[l]] / mb
+      accum_b[[l]] = accum_b[[l]] / mb
+    }
+    
+    # Update network weights and biases
+    for(l in 1:length(nn$W)){
+      nn$W[[l]] = nn$W[[l]] - eta * accum_W[[l]]
+      nn$b[[l]] = nn$b[[l]] - eta * accum_b[[l]]
+    }
+  }
+  return(nn)
+}
+
+
+#5 iris example
+data(iris)
+iris$Species = as.numeric(as.factor(iris$Species))
+iris = as.matrix(iris)
+test_index = seq(from = 5, to = nrow(iris), by = 5)
+test_data = iris[test_index, 1:4]
+train_data = iris[-test_index, 1:4]
+test_species = iris[test_index, 5]
+train_species = iris[-test_index, 5]
+
+
+d = c(4, 8, 7, 3)
+#set.seed(15); 
+nn1 = netup(d) 
+
+
+train_nn = train(nn = nn1 , inp = train_data, 
+                 k = train_species, eta = 0.01, mb = 10, nstep = 10000)
+
+p = rep(0, nrow(train_data))
+for (i in 1:  nrow(train_data)){
+  h_i = forward(nn1,train_data[i,])$h[[length(d)]]
+  k_i = which.max(h_i)
+  prob = exp(h_i) / sum(exp(h_i))
+  p[i] = -log(prob[k_i])
+}
+loss_0 = mean(p)
+
+
+
+p1 = rep(0, nrow(train_data))
+for (i in 1:  nrow(train_data)){
+  h_i =  forward(train_nn,train_data[i,])$h[[length(d)]]
+  k_i = which.max(h_i)
+  prob = exp(h_i) / sum(exp(h_i))
+  p1[i] = -log(prob[k_i])
+}
+loss_1 = mean(p1)
+loss_0 - loss_1
+
+
+test_pred = rep(0,nrow(test_data))
+for(i in 1:nrow(test_data)){
+  test_for = forward(nn1, as.numeric(test_data[i,]))
+  th = test_for$h[[length(nn1$d)]]
+  test_pred[i] = which.max(th)
+}
+test_pred
+sum(test_species == test_pred)
+mis_rate = sum(test_species != test_pred) / length(test_pred)
+mis_rate
+
+
+
+#6 misclassification rate
+test_pred = rep(0,nrow(test_data))
+for(i in 1:nrow(test_data)){
+  test_for = forward(train_nn, as.numeric(test_data[i,]))
+  th = test_for$h[[length(train_nn$d)]]
+  test_pred[i] = which.max(th)
+}
+test_pred
+sum(test_species == test_pred)
+mis_rate = sum(test_species != test_pred) / length(test_pred)
+mis_rate
+
+
+
+
+
+
+
+
+
