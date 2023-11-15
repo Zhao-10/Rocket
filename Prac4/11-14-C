@@ -3,7 +3,8 @@
 # matrix train data
 # modify the variable name
 # deriv() test
-# try another dataset maybe
+# try another dataset necessarily
+# compute the loss before and after,compare
 
 #1 define the network
 netup = function(d){
